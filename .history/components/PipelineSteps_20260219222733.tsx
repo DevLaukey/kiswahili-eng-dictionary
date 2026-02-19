@@ -221,54 +221,34 @@ export function PipelineSteps({ steps }: PipelineStepsProps) {
                     {step ? stepDescription(stepId, status, step.data) : ""}
                   </p>
                 )}
+              {stepId === "vector_search" &&
+status === "done" &&
+step?.data.entries && (
+  <div className="mt-2 flex flex-wrap gap-1.5">
+    {Array.isArray(step.data.entries) &&
+      (
+        step.data.entries as Array<{
+          word: string;
+          score: number;
+        }>
+      ).map((entry) => (
+        <span
+          key={entry.word}
+          className="rounded-full bg-zinc-200 px-2 py-1 text-xs text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300"
+        >
+          {entry.word}
+        </span>
+      ))}
+  </div>
+)}
 
-                {stepId === "vector_search" &&
-                  status === "done" &&
-                  step &&
-                  (() => {
-                    const entries = step.data.entries;
-
-                    if (!Array.isArray(entries)) return null;
-
-                    return (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {entries.map((e) => {
-                          if (
-                            typeof e !== "object" ||
-                            e === null ||
-                            !("word" in e) ||
-                            !("score" in e)
-                          ) {
-                            return null;
-                          }
-
-                          const word = String((e as any).word);
-                          const score = Number((e as any).score);
-
-                          return (
-                            <span
-                              key={word}
-                              className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                            >
-                              {word}{" "}
-                              <span className="text-zinc-400">
-                                {(score * 100).toFixed(0)}%
-                              </span>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-              </div>
-
-              {/* Status icon */}
-              <div className="mt-0.5 flex-shrink-0">
-                <StatusIcon status={status} />
-              </div>
+            {/* Status icon */}
+            <div className="mt-0.5 flex-shrink-0">
+              <StatusIcon status={status} />
             </div>
-          );
-        })}
+          </div>
+        );
+      })}
       </div>
     </div>
   );

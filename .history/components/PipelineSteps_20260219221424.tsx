@@ -64,21 +64,14 @@ function StatusIcon({ status }: { status: StepStatus }) {
   if (status === "running")
     return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
   if (status === "done")
-    return (
-      <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />
-    );
+    return <CheckCircle2 className="h-5 w-5 text-green-500 dark:text-green-400" />;
   if (status === "error")
     return <XCircle className="h-5 w-5 text-red-500 dark:text-red-400" />;
   return <Circle className="h-5 w-5 text-zinc-300 dark:text-zinc-600" />;
 }
 
-function stepDescription(
-  step: string,
-  status: StepStatus,
-  data: Record<string, unknown>,
-): string {
-  if (status === "running")
-    return ((data.message as string) ?? "Processing...") as string;
+function stepDescription(step: string, status: StepStatus, data: Record<string, unknown>): string {
+  if (status === "running") return ((data.message as string) ?? "Processing...") as string;
 
   switch (step) {
     case "guard_check": {
@@ -120,7 +113,8 @@ function stepDescription(
     }
 
     case "llm_generation": {
-      if (data.fallback) return `Fallback response (Ollama unavailable)`;
+      if (data.fallback)
+        return `Fallback response (Ollama unavailable)`;
       const chars = data.response_length as number;
       return `Generated ${chars} characters with ${data.model as string}`;
     }
@@ -130,13 +124,7 @@ function stepDescription(
   }
 }
 
-function ElapsedBadge({
-  startedAt,
-  completedAt,
-}: {
-  startedAt?: number;
-  completedAt?: number;
-}) {
+function ElapsedBadge({ startedAt, completedAt }: { startedAt?: number; completedAt?: number }) {
   if (!startedAt || !completedAt) return null;
   const ms = completedAt - startedAt;
   return (
@@ -180,8 +168,8 @@ export function PipelineSteps({ steps }: PipelineStepsProps) {
                 status === "running"
                   ? "bg-blue-50/60 dark:bg-blue-950/20"
                   : status === "done"
-                    ? "bg-white dark:bg-zinc-900"
-                    : "bg-zinc-50/50 dark:bg-zinc-900/50"
+                  ? "bg-white dark:bg-zinc-900"
+                  : "bg-zinc-50/50 dark:bg-zinc-900/50"
               } ${idx === 0 ? "rounded-t-lg" : ""} ${isLast ? "rounded-b-lg" : ""}`}
             >
               {/* Step icon */}
@@ -214,52 +202,34 @@ export function PipelineSteps({ steps }: PipelineStepsProps) {
                       status === "running"
                         ? "text-blue-600 dark:text-blue-400"
                         : status === "error"
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-zinc-500 dark:text-zinc-400"
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-zinc-500 dark:text-zinc-400"
                     }`}
                   >
-                    {step ? stepDescription(stepId, status, step.data) : ""}
+                    {step
+                      ? (stepDescription(stepId, status, step.data) as string)
+                      : ""}
                   </p>
                 )}
 
+                {/* Expanded entries list for vector_search */}
                 {stepId === "vector_search" &&
                   status === "done" &&
-                  step &&
-                  (() => {
-                    const entries = step.data.entries;
-
-                    if (!Array.isArray(entries)) return null;
-
-                    return (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {entries.map((e) => {
-                          if (
-                            typeof e !== "object" ||
-                            e === null ||
-                            !("word" in e) ||
-                            !("score" in e)
-                          ) {
-                            return null;
-                          }
-
-                          const word = String((e as any).word);
-                          const score = Number((e as any).score);
-
-                          return (
-                            <span
-                              key={word}
-                              className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                            >
-                              {word}{" "}
-                              <span className="text-zinc-400">
-                                {(score * 100).toFixed(0)}%
-                              </span>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                  step?.data.entries && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(step.data.entries as Array<{ word: string; score: number }>).map((e) => (
+                        <span
+                          key={e.word}
+                          className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                        >
+                          {e.word}{" "}
+                          <span className="text-zinc-400">
+                            {(e.score * 100).toFixed(0)}%
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
               </div>
 
               {/* Status icon */}

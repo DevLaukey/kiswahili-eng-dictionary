@@ -77,8 +77,7 @@ function stepDescription(
   status: StepStatus,
   data: Record<string, unknown>,
 ): string {
-  if (status === "running")
-    return ((data.message as string) ?? "Processing...") as string;
+  if (status === "running") return (data.message as string) ?? "Processing...";
 
   switch (step) {
     case "guard_check": {
@@ -224,42 +223,26 @@ export function PipelineSteps({ steps }: PipelineStepsProps) {
 
                 {stepId === "vector_search" &&
                   status === "done" &&
-                  step &&
-                  (() => {
-                    const entries = step.data.entries;
-
-                    if (!Array.isArray(entries)) return null;
-
-                    return (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {entries.map((e) => {
-                          if (
-                            typeof e !== "object" ||
-                            e === null ||
-                            !("word" in e) ||
-                            !("score" in e)
-                          ) {
-                            return null;
-                          }
-
-                          const word = String((e as any).word);
-                          const score = Number((e as any).score);
-
-                          return (
-                            <span
-                              key={word}
-                              className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                            >
-                              {word}{" "}
-                              <span className="text-zinc-400">
-                                {(score * 100).toFixed(0)}%
-                              </span>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                  step?.data.entries && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(
+                        step.data.entries as Array<{
+                          word: string;
+                          score: number;
+                        }>
+                      ).map((e) => (
+                        <span
+                          key={e.word}
+                          className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                        >
+                          {e.word}{" "}
+                          <span className="text-zinc-400">
+                            {(e.score * 100).toFixed(0)}%
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
               </div>
 
               {/* Status icon */}
