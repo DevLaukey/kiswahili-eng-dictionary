@@ -7,18 +7,11 @@ import { Language } from "@/lib/types";
 interface SearchBarProps {
   onSearch: (query: string, k: number, language: Language) => void;
   isLoading: boolean;
-  showPipelineSteps: boolean;
-  onTogglePipelineSteps: (value: boolean) => void;
 }
 
-export function SearchBar({
-  onSearch,
-  isLoading,
-  showPipelineSteps,
-  onTogglePipelineSteps,
-}: SearchBarProps) {
+export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
   const [query, setQuery] = useState("");
-  const [k, setK] = useState(3);
+  const [k, setK] = useState(5);
   const [language, setLanguage] = useState<Language>(Language.AUTO);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,7 +63,7 @@ export function SearchBar({
             className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             disabled={isLoading}
           >
-            {[3, 5].map((num) => (
+            {[3, 5, 10, 15, 20].map((num) => (
               <option key={num} value={num}>
                 {num}
               </option>
@@ -79,10 +72,7 @@ export function SearchBar({
         </div>
 
         <div className="flex items-center gap-2">
-          <label
-            htmlFor="language"
-            className="text-zinc-600 dark:text-zinc-400"
-          >
+          <label htmlFor="language" className="text-zinc-600 dark:text-zinc-400">
             Language:
           </label>
           <select
@@ -97,18 +87,6 @@ export function SearchBar({
             <option value={Language.ENGLISH}>English</option>
           </select>
         </div>
-
-        <label className="flex cursor-pointer items-center gap-2 select-none">
-          <input
-            type="checkbox"
-            checked={showPipelineSteps}
-            onChange={(e) => onTogglePipelineSteps(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 accent-blue-600 dark:border-zinc-600"
-          />
-          <span className="text-zinc-600 dark:text-zinc-400">
-            Show pipeline steps
-          </span>
-        </label>
       </div>
     </form>
   );

@@ -11,6 +11,7 @@ import {
   SearchResponse,
   HealthResponse,
   ErrorResponse,
+  StreamEvent,
 } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -84,6 +85,67 @@ export const api = {
       body: JSON.stringify(request),
     });
     return handleResponse<BatchQueryResponse>(response);
+  },
+
+  /**
+   * Process a query with real-time step-by-step progress via SSE streaming.
+   * onEvent is called for each step event as it arrives.
+   */
+  async queryStream(
+    request: QueryRequest,
+    onEvent: (event: StreamEvent) => void
+  ): Promise<void> {
+    const response = await fetch(
+      `${API_BASE_URL}${API_PREFIX}/query/stream`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      let errorData: ErrorResponse;
+      try {
+        errorData = await response.json();
+      } catch {
+        throw new ApiError(
+          `HTTP Error ${response.status}: ${response.statusText}`,
+          response.status
+        );
+      }
+      throw new ApiError(
+        errorData.error || "An error occurred",
+        response.status,
+        errorData.detail
+      );
+    }
+
+    if (!response.body) throw new ApiError("No response body from stream");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          try {
+            const event = JSON.parse(raw) as StreamEvent;
+            onEvent(event);
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
+    }
   },
 
   /**

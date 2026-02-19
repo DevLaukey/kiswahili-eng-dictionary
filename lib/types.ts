@@ -14,7 +14,7 @@ export interface DictionaryEntry {
   definition_sw?: string;
   definition_en?: string;
   similarity_score: number;
-  examples?: Array<{ [key: string]: string }>;
+  examples?: string[];
   synonyms?: string[];
 }
 
@@ -22,6 +22,7 @@ export interface QueryRequest {
   query: string;
   k?: number;
   language?: Language;
+  threshold?: number;
 }
 
 export interface QueryResponse {
@@ -31,6 +32,8 @@ export interface QueryResponse {
   retrieved_entries: DictionaryEntry[];
   top_match?: DictionaryEntry;
   processing_time_ms?: number;
+  below_threshold?: boolean;
+  blocked?: boolean;
 }
 
 export interface BatchQueryRequest {
@@ -68,4 +71,20 @@ export interface ErrorResponse {
   error: string;
   detail?: string;
   query?: string;
+}
+
+export type StepStatus = "pending" | "running" | "done" | "error";
+
+export interface PipelineStep {
+  step: string;
+  status: StepStatus;
+  data: Record<string, unknown>;
+  startedAt?: number;
+  completedAt?: number;
+}
+
+export interface StreamEvent {
+  step: string;
+  status: "running" | "done" | "error";
+  data: Record<string, unknown>;
 }

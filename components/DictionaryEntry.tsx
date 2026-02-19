@@ -104,13 +104,9 @@ export function DictionaryEntry({ entry, isTopMatch = false }: DictionaryEntryPr
               {entry.examples.map((example, idx) => (
                 <li
                   key={idx}
-                  className="rounded-md border-l-4 border-zinc-300 bg-zinc-50 p-2 text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                  className="rounded-md border-l-4 border-blue-300 bg-zinc-50 px-3 py-2 text-sm italic text-zinc-600 dark:border-blue-700 dark:bg-zinc-800 dark:text-zinc-400"
                 >
-                  {Object.entries(example).map(([lang, text]) => (
-                    <div key={lang}>
-                      <span className="font-medium">{lang}:</span> {text}
-                    </div>
-                  ))}
+                  &ldquo;{example}&rdquo;
                 </li>
               ))}
             </ul>

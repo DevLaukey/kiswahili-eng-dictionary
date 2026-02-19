@@ -7,18 +7,11 @@ import { Language } from "@/lib/types";
 interface SearchBarProps {
   onSearch: (query: string, k: number, language: Language) => void;
   isLoading: boolean;
-  showPipelineSteps: boolean;
-  onTogglePipelineSteps: (value: boolean) => void;
 }
 
-export function SearchBar({
-  onSearch,
-  isLoading,
-  showPipelineSteps,
-  onTogglePipelineSteps,
-}: SearchBarProps) {
+export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
   const [query, setQuery] = useState("");
-  const [k, setK] = useState(3);
+  const [k, setK] = useState(5);
   const [language, setLanguage] = useState<Language>(Language.AUTO);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -97,18 +90,6 @@ export function SearchBar({
             <option value={Language.ENGLISH}>English</option>
           </select>
         </div>
-
-        <label className="flex cursor-pointer items-center gap-2 select-none">
-          <input
-            type="checkbox"
-            checked={showPipelineSteps}
-            onChange={(e) => onTogglePipelineSteps(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 accent-blue-600 dark:border-zinc-600"
-          />
-          <span className="text-zinc-600 dark:text-zinc-400">
-            Show pipeline steps
-          </span>
-        </label>
       </div>
     </form>
   );

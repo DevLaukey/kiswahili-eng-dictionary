@@ -4,15 +4,40 @@ import { useState, useEffect } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchResults } from "@/components/SearchResults";
 import { HealthStatus } from "@/components/HealthStatus";
+import { PipelineSteps } from "@/components/PipelineSteps";
 import { api } from "@/lib/api";
-import { QueryResponse, HealthResponse, Language } from "@/lib/types";
+import {
+  QueryResponse,
+  HealthResponse,
+  Language,
+  PipelineStep,
+  StreamEvent,
+  DictionaryEntry,
+} from "@/lib/types";
 import { AlertCircle, BookOpen } from "lucide-react";
+
+function convertToQueryResponse(
+  data: Record<string, unknown>
+): QueryResponse {
+  return {
+    query: data.query as string,
+    language: data.language as string,
+    response: data.response as string,
+    retrieved_entries: (data.retrieved_entries as DictionaryEntry[]) ?? [],
+    top_match: data.top_match as DictionaryEntry | undefined,
+    processing_time_ms: data.processing_time_ms as number | undefined,
+    below_threshold: (data.below_threshold as boolean) ?? false,
+    blocked: (data.blocked as boolean) ?? false,
+  };
+}
 
 export default function Home() {
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [steps, setSteps] = useState<PipelineStep[]>([]);
+  const [showPipelineSteps, setShowPipelineSteps] = useState(true);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -29,18 +54,50 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = async (query: string, k: number, language: Language) => {
+  const handleSearch = async (
+    query: string,
+    k: number,
+    language: Language
+  ) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setSteps([]);
 
     try {
-      const response = await api.query({
-        query,
-        k,
-        language,
+      await api.queryStream({ query, k, language }, (event: StreamEvent) => {
+        if (event.step === "complete") {
+          setResult(convertToQueryResponse(event.data));
+        } else if (event.step === "error") {
+          setError((event.data.message as string) ?? "An unexpected error occurred");
+        } else {
+          const now = Date.now();
+          setSteps((prev) => {
+            const idx = prev.findIndex((s) => s.step === event.step);
+            if (idx >= 0) {
+              // Update existing step (running → done)
+              const updated = [...prev];
+              updated[idx] = {
+                ...updated[idx],
+                status: event.status,
+                data: event.data,
+                completedAt: event.status === "done" ? now : undefined,
+              };
+              return updated;
+            }
+            // New step appearing
+            return [
+              ...prev,
+              {
+                step: event.step,
+                status: event.status,
+                data: event.data,
+                startedAt: now,
+              },
+            ];
+          });
+        }
       });
-      setResult(response);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -51,6 +108,8 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  const showSteps = steps.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 font-sans dark:from-zinc-950 dark:to-black">
@@ -69,7 +128,12 @@ export default function Home() {
 
         <HealthStatus health={health} />
 
-        <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+        <SearchBar
+          onSearch={handleSearch}
+          isLoading={isLoading}
+          showPipelineSteps={showPipelineSteps}
+          onTogglePipelineSteps={setShowPipelineSteps}
+        />
 
         {error && (
           <div className="w-full max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/30">
@@ -87,9 +151,11 @@ export default function Home() {
           </div>
         )}
 
+        {showSteps && showPipelineSteps && <PipelineSteps steps={steps} />}
+
         {result && <SearchResults result={result} />}
 
-        {!result && !isLoading && !error && (
+        {!result && !isLoading && !error && !showSteps && (
           <div className="w-full max-w-3xl rounded-lg border border-zinc-200 bg-white p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <BookOpen className="mx-auto mb-4 h-12 w-12 text-zinc-400" />
             <h2 className="mb-2 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
